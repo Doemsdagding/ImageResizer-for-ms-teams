@@ -1,0 +1,122 @@
+#:kivy 2.3.0
+#:import utils kivy.utils
+#:import Animation kivy.animation.Animation
+#:import Factory kivy.factory.Factory
+#:import gradient gradient.gradient
+
+#:set dropshadow_color (0, 0, 0, 0.2)
+#:set standard_button_color (0.298, 0.686, 0.314, 1)
+#:set pressed_button_color (0.082, 0.149, 0.008, 1)
+#:set invis_button_color (0, 0, 0, 0)
+
+<RoundedButton@Button>:
+    background_color: 0, 0, 0, 0
+    button_color: (0.298, 0.686, 0.314, 1)
+    canvas.before:
+        Color:
+            rgba: dropshadow_color
+        RoundedRectangle:
+            pos: self.x + 3, self.y - 3
+            size: self.width, self.height
+            radius: [20,]
+        Color:
+            rgba: self.button_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [20,]
+    on_press:
+        Animation(button_color = pressed_button_color, duration=0.1).start(self)
+    on_release:
+        Animation(button_color =standard_button_color, duration=0.1).start(self)
+
+<GradientButton@Button>:
+    background_color: 0, 0, 0, 0
+    color1: 0.3255, 0.7882, 0.3412, 1
+    color2: 0.298, 0.686, 0.314, 1
+    button_texture: gradient.diagonal(self.color1, self.color2)
+    button_color: 0, 0, 0, 0
+    canvas.before:
+        Color:
+            rgba: dropshadow_color
+        RoundedRectangle:
+            pos: self.x + 5, self.y - 5
+            size: self.width, self.height
+            radius: [20,]
+
+        Color:
+            rgba: 1, 1, 1, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [20,]
+            texture: self.button_texture
+        Color:
+            rgba: self.button_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [20,]
+    on_press:
+        Animation(button_color = pressed_button_color, duration=0.1).start(self)
+    on_release:
+        Animation(button_color = invis_button_color, duration=0.1).start(self)
+
+<MyRoot>:
+    canvas.before:
+        Color:
+            rgba: utils.get_color_from_hex('#F0F0F0')
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '20dp'
+        spacing: '15dp'
+
+        Label:
+            text: "Resize Image for MS Teams"
+            font_size: '36sp'
+            color: utils.get_color_from_hex('#126102')
+            size_hint_y: None
+            height: '50dp'
+            bold: True
+
+        AsyncImage:
+            source: root.image_source
+            size_hint: None, None
+            size: '680dp', '453dp'
+            pos_hint: {'center_x': 0.5}
+
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: '40dp'
+            spacing: '10dp'
+
+            TextInput:
+                id: image_path
+                text: "filepath"
+                readonly: True
+                font_size: '14sp'
+                multiline: False
+                background_color: utils.get_color_from_hex('#FFFFFF')
+                foreground_color: utils.get_color_from_hex('#333333')
+
+            RoundedButton:
+                id: select_file_button
+                text: "Select file"
+                font_size: '14sp'
+                size_hint_x: None
+                width: '120dp'
+                on_press: root.choose_file()
+
+        GradientButton:
+            id: resize_button
+            text: "Resize"
+            font_size: '18sp'
+            size_hint: None, None
+            size: '200dp', '50dp'
+            pos_hint: {'center_x': 0.5}
+            on_press: root.resize_image()
