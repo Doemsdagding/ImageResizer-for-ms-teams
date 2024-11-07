@@ -8,18 +8,20 @@ from kivy.animation import Animation
 from kivy.utils import get_color_from_hex
 from kivy.core.window import Window
 from PIL import Image
-from plyer import filechooser
 from gradient import gradient
 from itertools import chain
 from kivy.graphics.texture import Texture
 import numpy as np
+
+from kivy.uix.filechooser import FileChooserIconView
+from kivy.uix.popup import Popup
 
 from kivy.lang import Builder
 Builder.load_string("""
 #:import gradient gradient.gradient
 """)
 
-kivy.require('2.3.0')
+kivy.require("2.3.0")
 
 class MyRoot(BoxLayout):
     """functions go here """
@@ -30,29 +32,49 @@ class MyRoot(BoxLayout):
 
     def choose_file(self):
         """
-        Open a file chooser dialog for selecting image files.
-
-        This method launches a file chooser dialog that allows the user to select
-        either JPEG (.jpg) or PNG (.png) image files. Once a file is selected,
-        the 'selected' method of this class will be called with the chosen file(s).
-
-        The file chooser is configured with the following filters:
-        - JPEG Files (*.jpg)
-        - PNG Files (*.png)
+            *opens a file selector window
+            *execute the selected function
         """
-        filechooser.open_file(on_selection=self.selected, filters=[("JPEG Files", "*.jpg"),("PNG Files", "*.png")])
+        default_path = os.path.join(os.path.expanduser("~"), "C:\\Users\\gold-\\AppData\\Roaming\\Microsoft\\Teams\\Backgrounds\\Uploads")
+        # Use default path if exists, otherwise fallback to home directory
+        start_path = default_path if os.path.exists(default_path) else os.path.expanduser("~")
+
+        content = BoxLayout(orientation="vertical")
+        file_chooser = FileChooserIconView(
+            filters=["*.jpg", "*.png"],
+            path=start_path
+        )
+
+        def select_file(instance):
+            if file_chooser.selection:
+                self.selected(file_chooser.selection)
+                popup.dismiss()
+
+        # Create buttons for the popup
+        buttons = BoxLayout(size_hint_y=None, height=40)
+        select_button = Button(text="Select", size_hint_x=0.5)
+        cancel_button = Button(text="Cancel", size_hint_x=0.5)
+
+        select_button.bind(on_release=select_file)
+        cancel_button.bind(on_release=lambda x: popup.dismiss())
+
+        buttons.add_widget(select_button)
+        buttons.add_widget(cancel_button)
+
+        content.add_widget(file_chooser)
+        content.add_widget(buttons)
+
+        popup = Popup(
+            title="Choose an image file",
+            content=content,
+            size_hint=(0.9, 0.9)
+        )
+        popup.open()
 
     def selected(self, selection):
         """
-        Process the selected image file.
-
-        This method is called when a file is selected from the file chooser.
-        It performs the following operations:
-        1. Stores the original file path.
-        2. Opens the selected image.
-        3. Resizes the image to 680x453 pixels using LANCZOS resampling.
-        4. Saves the resized image as a preview.
-        5. Updates the image source for display.
+        *Process the selected image file.
+        *Update the image path and preview.
 
         Args:
             selection: A list containing the path of the selected file.
@@ -60,9 +82,10 @@ class MyRoot(BoxLayout):
         """
         if selection:
             self.original_path = selection[0]
+            self.ids.image_path.text = selection[0]
             with Image.open(selection[0]) as img:
                 resized = img.resize((680, 453), Image.Resampling.LANCZOS)
-                preview_path = 'preview.png'
+                preview_path = "preview.png"
                 resized.save(preview_path)
                 self.image_source = preview_path
 
@@ -70,26 +93,18 @@ class MyRoot(BoxLayout):
         """
         Resize the original image and update the display.
 
-        This method performs the following operations:
-        1. Checks if an original image path exists.
-        2. Opens the original image.
-        3. Resizes the image to 680x453 pixels using LANCZOS resampling.
-        4. Saves the resized image, overwriting the original file.
-        5. Updates the image_source to display the resized image.
-        6. Removes the temporary preview image if it exists.
-
         The method only executes if an original image path has been set.
         After resizing, the original file is replaced with the resized version.
-        The temporary 'preview.png' file is deleted to clean up resources.
+        The temporary "preview.png" file is deleted to clean up resources.
         """
-        if hasattr(self, 'original_path'):
+        if hasattr(self, "original_path"):
             with Image.open(self.original_path) as img:
                 resized = img.resize((680, 453), Image.Resampling.LANCZOS)
                 resized.save(self.original_path)
             self.image_source = self.original_path
 
-            if os.path.exists('preview.png'):
-                os.remove('preview.png')
+            if os.path.exists("preview.png"):
+                os.remove("preview.png")
 
 
 class resize(App):
